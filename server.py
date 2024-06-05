@@ -3,7 +3,7 @@ import socket
 import object_client
 
 host = 'localhost'
-port = 55555
+port = 50112
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((host, port))
@@ -27,7 +27,7 @@ def handle(client):
         except:
             index = clients.index(client)
             clients.remove(client)
-            clients.close()
+            client.close()
             nickname = nicknames[index]
             broadcast(f"{nickname} meninggalkan chat".encode('ascii'))
             nicknames.remove(nickname)
@@ -50,6 +50,7 @@ def receive():
 
         thread = threading.Thread(target=handle, args=(client,))
         thread.start()
+
 
 print("Server is running")
 receive()
