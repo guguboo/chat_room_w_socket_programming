@@ -58,7 +58,6 @@ class ChatWindow:
         else:
             self.client = Client(self.username, self)
             self._chat_window()
-            self.insert_message(str("Selamat Datang " + self.username + "!"))
 
     def _authenticate_user(self):
         if not self.username:
@@ -70,7 +69,6 @@ class ChatWindow:
     def _chat_window(self):
         #text widget
         self.head_label.config(text="Chat Room V1 - Vico, Andrea, Nirvana")
-
         self.text_widget = Text(self.window, width=20, height=2, bg=BG_COLOR, fg=TEXT_COLOR,
                                 font=FONT, pady=5, padx=5)
         self.text_widget.place(relheight=0.745, relwidth=1, rely=0.08)
@@ -105,7 +103,14 @@ class ChatWindow:
         if not msg:
             return
 
-        self.msg_box.delete(0, END)
+        msg_box_initiated = False
+
+        while not msg_box_initiated:
+            try:
+                self.msg_box.delete(0, END)
+                msg_box_initiated = True
+            except:
+                pass
         msg1 = msg + "\n\n"
         self.text_widget.configure(cursor="arrow", state=NORMAL)
         self.text_widget.insert(END, msg1)

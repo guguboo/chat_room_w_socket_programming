@@ -1,11 +1,13 @@
 import socket
 import threading
 
+serverPort = 50112
+
 
 class Client:
     def __init__(self, username, parent):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client.connect(('localhost', 50112))
+        self.client.connect(('localhost', serverPort))
         self.username = username
         self.queue_lock = threading.Lock()
         self.parent = parent
@@ -20,7 +22,7 @@ class Client:
 
     def receive(self):
         while True:
-            try:
+            # try:
                 # Receive Message From Server
                 # If 'NICK' Send Nickname
                 message = self.client.recv(1024).decode('ascii')
@@ -29,22 +31,22 @@ class Client:
                 else:
                     print(message)
                     self.parent.insert_message(message)
-            except:
-                # Close Connection When Error
-                print("An error occured!")
-                self.client.close()
-                break
+            # except:
+            #     # Close Connection When Error
+            #     print("An error occured!")
+            #     self.client.close()
+            #     break
 
     def write(self):
         while True:
             if self.message_queue:
                 with self.queue_lock:
-                    # try:
+                    try:
                         msg = self.message_queue.pop(0)
                         message = '{}: {}'.format(self.username, msg)
-                        self.client.send(message.encode('utf-8'))
-                    # except:
-                    #     self.parent.insert_message("Terjadi kesalahan saat mengirim pesan.")
+                        self.client.send(message.encode('ascii'))
+                    except:
+                        self.parent.insert_message("Terjadi kesalahan saat mengirim pesan.")
 
     def send_message(self, message):
         if message:
