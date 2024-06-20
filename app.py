@@ -19,7 +19,7 @@ class ChatWindow:
         self.window.mainloop()
 
     # Fungsi untuk koneksi ke database
-    def connect_to_database():
+    def connect_to_database(self):
         try:
             connection = mysql.connector.connect(
                 host='localhost',
@@ -97,7 +97,7 @@ class ChatWindow:
         if not self.username or not self.password:
             return False
         else:
-            connection = connect_to_database()
+            connection = self.connect_to_database()
 
             if connection.is_connected():
                 cursor = connection.cursor()
@@ -156,7 +156,7 @@ class ChatWindow:
         if not self.reg_username or not self.reg_password:
             return False
         try:
-            connection = connect_to_database()
+            connection = self.connect_to_database()
             if connection.is_connected():
                 cursor = connection.cursor()
 
