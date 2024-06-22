@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 20, 2024 at 03:10 PM
--- Server version: 10.4.28-MariaDB
--- PHP Version: 8.2.4
+-- Generation Time: Jun 22, 2024 at 05:19 PM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -20,6 +20,46 @@ SET time_zone = "+00:00";
 --
 -- Database: `jarkom`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `chat_log`
+--
+
+CREATE TABLE `chat_log` (
+  `id` int(11) NOT NULL,
+  `Room_Id` int(11) NOT NULL,
+  `TimeStamp` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `Log_Id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `chat_log`
+--
+
+INSERT INTO `chat_log` (`id`, `Room_Id`, `TimeStamp`, `Log_Id`) VALUES
+(1, 1, '0000-00-00 00:00:00', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `chat_room`
+--
+
+CREATE TABLE `chat_room` (
+  `id` int(11) NOT NULL,
+  `Room_Id` int(11) NOT NULL,
+  `Room_Name` varchar(50) NOT NULL,
+  `Created_At` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `chat_room`
+--
+
+INSERT INTO `chat_room` (`id`, `Room_Id`, `Room_Name`, `Created_At`) VALUES
+(1, 1, 'test_room', '0000-00-00 00:00:00');
 
 -- --------------------------------------------------------
 
@@ -46,6 +86,21 @@ INSERT INTO `users` (`id`, `username`, `password`) VALUES
 --
 
 --
+-- Indexes for table `chat_log`
+--
+ALTER TABLE `chat_log`
+  ADD PRIMARY KEY (`Log_Id`),
+  ADD KEY `id` (`id`),
+  ADD KEY `FK_chat_log` (`Room_Id`);
+
+--
+-- Indexes for table `chat_room`
+--
+ALTER TABLE `chat_room`
+  ADD PRIMARY KEY (`Room_Id`),
+  ADD KEY `id` (`id`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -60,6 +115,23 @@ ALTER TABLE `users`
 --
 ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `chat_log`
+--
+ALTER TABLE `chat_log`
+  ADD CONSTRAINT `FK_chat_log` FOREIGN KEY (`Room_Id`) REFERENCES `chat_room` (`Room_Id`),
+  ADD CONSTRAINT `chat_log_ibfk_1` FOREIGN KEY (`id`) REFERENCES `users` (`id`);
+
+--
+-- Constraints for table `chat_room`
+--
+ALTER TABLE `chat_room`
+  ADD CONSTRAINT `chat_room_ibfk_1` FOREIGN KEY (`id`) REFERENCES `users` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
