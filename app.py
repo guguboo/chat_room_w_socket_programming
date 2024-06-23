@@ -115,7 +115,7 @@ class ChatWindow:
                 connection.close()
 
                 return user is not None
-            
+
     def _register_window(self):
         self.clear_all()
 
@@ -245,7 +245,7 @@ class ChatWindow:
         # Fetch members from database
         connection = self.connect_to_database()
         cursor = connection.cursor()
-        cursor.execute("SELECT chat_room.username FROM member JOIN chat_room ON member.Room_Id = chat_room.Room_Id WHERE Room_Name = %s", (self.room_name,))
+        cursor.execute("SELECT member.username FROM member JOIN chat_room ON member.Room_Id = chat_room.Room_Id WHERE Room_Name = %s", (self.room_name,))
         members = cursor.fetchall()
         connection.close()
 
@@ -306,8 +306,8 @@ class ChatWindow:
         for widget in self.changeableWindow.winfo_children():
             widget.destroy()
 
-    
-    #main menu  
+
+    #main menu
     def create_chat_room(self):
         create_window = Toplevel(self.window)
         create_window.title("Create Chat Room")
@@ -380,7 +380,7 @@ class ChatWindow:
 
         Button(create_window, text="Create", command=submit).pack(pady=20)
         Button(create_window, text="Cancel", command=create_window.destroy).pack(pady=10)
-    
+
     def creating_room_handle(self, msg):
         print(msg)
         if msg == "err":
@@ -409,7 +409,7 @@ class ChatWindow:
 
         connection = self.connect_to_database()
         cursor = connection.cursor()
-        cursor.execute("SELECT Room_Name FROM chat_room WHERE username = %s", (self.username,))
+        cursor.execute("SELECT Room_Name FROM chat_room JOIN member ON chat_room.Room_Id = member.Room_Id WHERE member.username = %s", (self.username,))
         chat_rooms = cursor.fetchall()
         connection.close()
 
@@ -448,5 +448,7 @@ class ChatWindow:
         create_room.pack(pady=10)
         see_list = Button(self.changeableWindow, text="See All Chat Rooms", command=self.see_chat_rooms, font=FONT_BOLD, width=20, bg=BG_GRAY)
         see_list.pack(pady=10)
+
+
 app = ChatWindow()
 app.run()

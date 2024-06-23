@@ -67,33 +67,18 @@ def receive():
         client.send('ROOM'.encode('ascii'))
         room = client.recv(1024).decode('ascii')
 
-        if "creatingchatroom_" in room:
-            room = room.split("_")[1]
-            print(room)
-            if room in room_members:
-                client.send('CREATING_ROOM_ERR'.encode('ascii'))
-            else:
-                new_client = ClientObj(nickname, client, room)
-                room_members[room] = [new_client]
-                print("testing")
-                client.send('SUCCESS'.encode('ascii'))
+        print(room)
+        new_client = ClientObj(nickname, client, room)
+        if room not in room_members:
+            print("baru bikin room")
+            room_members[room] = [new_client]
         else:
-            print("room yang dijoin", room)
-            if room in room_members:
-                in_room = False
-                for member in room_members[room]:
-                    if member.username == nickname:
-                        in_room = True
-                        break
-                print(in_room)
-                if in_room:
-                    for member in room_members[room]:
-                        if member.username == nickname:
-                            room_members[room].remove(member)
-                new_client = ClientObj(nickname, client, room)
-                room_members[room].append(new_client)
-                broadcast("{} joined!".format(nickname).encode('ascii'), room)
+            print("sudah ada room, nambah user")
+            print(room_members[room])
+            room_members[room].append(new_client)
+
         print("Nickname is {}".format(nickname))
+        broadcast("{} joined!".format(nickname).encode('ascii'), room)
 
         thread = threading.Thread(target=handle, args=(new_client,))
         thread.start()
