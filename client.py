@@ -22,6 +22,7 @@ class Client:
 
     def receive(self):
         while True:
+            try:
                 message = self.client.recv(1024).decode('ascii')
                 if message == 'NICK':
                     self.client.send(self.username.encode('ascii'))
@@ -30,6 +31,14 @@ class Client:
                 else:
                     print(message)
                     self.parent.insert_message(message)
+            except ConnectionResetError:
+                print("Connection was closed by the server")
+                self.client.close()
+                break
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                self.client.close()
+                break
 
 
     def write(self):
