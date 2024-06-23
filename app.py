@@ -335,25 +335,51 @@ class ChatWindow:
                 connection = self.connect_to_database()
 
                 cursor = connection.cursor()
-                cursor.execute(
-                    "INSERT INTO chat_room (username, Room_Name, Created_At) VALUES (%s, %s, NOW())",
-                    (self.username, room_name)
-                )
-                connection.commit()
-                connection.close()
 
-                self.chat_rooms.append(room_name)
-                messagebox.showinfo("Success", f"Chat room '{room_name}' created successfully!")
-                create_window.destroy()
-                self.client = Client(self.username, self, room_name)
-                self.room_name = room_name
-                self._chat_window()
+                try:
+                    # Insert new chat room
+                    cursor.execute(
+                        "INSERT INTO chat_room (username, Room_Name, Created_At) VALUES (%s, %s, NOW())",
+                        (self.username, room_name)
+                    )
+                    connection.commit()
+
+                    # Fetch the Room_Id of the newly created chat room
+                    cursor.execute("SELECT Room_Id FROM chat_room WHERE Room_Name = %s", (room_name,))
+                    room_id = cursor.fetchone()
+
+                    if room_id:
+                        room_id = room_id[0]
+
+                        # Insert into member table
+                        cursor.execute(
+                            "INSERT INTO member (username, Room_Id) VALUES (%s, %s)",
+                            (self.username, room_id)
+                        )
+                        connection.commit()
+
+                        self.chat_rooms.append(room_name)
+                        messagebox.showinfo("Success", f"Chat room '{room_name}' created successfully!")
+                        create_window.destroy()
+                        self.client = Client(self.username, self, room_name)
+                        self.room_name = room_name
+                        self._chat_window()
+                    else:
+                        messagebox.showwarning("Error", "Failed to fetch Room_Id for the new chat room!")
+
+                except mysql.connector.Error as e:
+                    connection.rollback()
+                    print(f"Error: {e}")
+                    messagebox.showerror("Database Error", f"An error occurred: {e}")
+                finally:
+                    cursor.close()
+                    connection.close()
             else:
                 messagebox.showwarning("Input Error", "Chat room name is required!")
 
         Button(create_window, text="Create", command=submit).pack(pady=20)
         Button(create_window, text="Cancel", command=create_window.destroy).pack(pady=10)
-        
+
     def see_chat_rooms(self):
     # Create a new window to display available chat rooms
         rooms_window = Toplevel(self.window)

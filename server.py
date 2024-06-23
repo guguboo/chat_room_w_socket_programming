@@ -1,5 +1,6 @@
 import threading
 import socket
+import mysql.connector
 from collections import defaultdict
 from object_client import ClientObj
 
@@ -12,7 +13,28 @@ server.bind((host, port))
 server.listen()
 
 room_members = {}
+chat_rooms = {}
 
+def connect_to_database():
+    try:
+        connection = mysql.connector.connect(
+            host='localhost',
+            database='jarkom',
+            user='root',
+            password=''
+        )
+        return connection
+    except mysql.connector.Error as e:
+        print(f"Error connecting to MySQL: {e}")
+        return None
+
+conn = connect_to_database()
+cursor = conn.cursor()
+cursor.execute("SELECT Room_Name FROM chat_room")
+room_names = cursor.fetchall()
+for name in room_names:
+    chat_rooms[name[0]] = []
+conn.close()
 
 def broadcast(msg, room):
     print(room_members)
