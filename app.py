@@ -185,6 +185,10 @@ class ChatWindow:
         #text widget
         self.clear_all()
         self.head_label.config(text=self.room_name)
+
+        self.user_list = Listbox(self.changeableWindow, bg=BG_COLOR, fg=TEXT_COLOR, font=FONT)
+        self.user_list.place(relwidth=0.3, relheight=0.745, rely=0)
+
         self.text_widget = Text(self.changeableWindow, width=20, height=2, bg=BG_COLOR, fg=TEXT_COLOR,
                                 font=FONT, padx=5)
         self.text_widget.place(relheight=0.745, relwidth=1, rely=0)
@@ -210,13 +214,25 @@ class ChatWindow:
                             command=lambda: self.on_enter_msg())
         self.back_btn = Button(self.window, text="Back", font=FONT_BOLD, bg=BG_GRAY,
                             command=lambda: self.back_to_main_menu())
+
         self.back_btn.place(relx=0.02, rely=0.008)
         send_button.place(relx=0.77, rely=0.008, relheight=0.06, relwidth=0.22)
 
-    def on_enter_msg(self):
+    def update_user_list(self, usernames):
+        self.user_list.delete(0, END)
+        for username in usernames:
+            self.user_list.insert(END, username)
+
+    def notify_user_joined(self, username):
+        self.insert_message(f"{username} has joined the chat.")
+
+    def on_enter_msg(self, event=None):
         msg = self.msg_box.get()
         self.client.send_message(msg)
+        self.insert_message(f"You: {msg}")
+        self.msg_box.delete(0, END)  # Clear the message box after sending
         return msg
+
     def back_to_main_menu(self):
         self.back_btn.destroy()
         self.main_menu()
@@ -272,7 +288,17 @@ class ChatWindow:
             room_name = chat_room_name.get()
             desc = description.get()
             if room_name:
-                self.chat_rooms.append(room_name)  # Add the new room name to the list
+                connection = self.connect_to_database()
+
+                cursor = connection.cursor()
+                cursor.execute(
+                    "INSERT INTO chat_room (username, Room_Name, Created_At) VALUES (%s, %s, NOW())",
+                    (self.username, room_name)
+                )
+                connection.commit()
+                connection.close()
+
+                self.chat_rooms.append(room_name)
                 messagebox.showinfo("Success", f"Chat room '{room_name}' created successfully!")
                 create_window.destroy()
                 self.client = Client(self.username, self, room_name)
@@ -302,9 +328,23 @@ class ChatWindow:
         listbox = Listbox(rooms_window)
         listbox.pack(pady=10)
 
+        connection = self.connect_to_database()
+        cursor = connection.cursor()
+        cursor.execute("SELECT Room_Name FROM chat_room WHERE username = %s", (self.username,))
+        self.chat_rooms = cursor.fetchall()
+        connection.close()
+
         for room in self.chat_rooms:
             listbox.insert(END, room)
 
+        def open_chat(event):
+            selected_room = listbox.get(listbox.curselection())
+            self.client = Client(self.username, self, selected_room)
+            self.room_name = selected_room
+            self._chat_window()
+            rooms_window.destroy()
+
+        listbox.bind('<<ListboxSelect>>', open_chat)
         Button(rooms_window, text="Back", command=rooms_window.destroy).pack(pady=10)
 
     def main_menu(self):
