@@ -331,8 +331,10 @@ class ChatWindow:
         connection = self.connect_to_database()
         cursor = connection.cursor()
         cursor.execute("SELECT Room_Name FROM chat_room WHERE username = %s", (self.username,))
-        self.chat_rooms = cursor.fetchall()
+        chat_rooms = cursor.fetchall()
         connection.close()
+
+        self.chat_rooms = [room[0] for room in chat_rooms]
 
         for room in self.chat_rooms:
             listbox.insert(END, room)

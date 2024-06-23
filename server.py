@@ -17,7 +17,7 @@ room_members = {}
 def broadcast(msg, room):
     print(room_members)
     for member in room_members[room]:
-        member.client.send_message(msg)
+        member.client.send(msg)
 
 
 def handle(new_client):
@@ -40,9 +40,9 @@ def receive():
         client, address = server.accept()
         print(f"{client} bergabung dengan {address}")
 
-        client.send_message('NICK'.encode('ascii'))
+        client.send('NICK'.encode('ascii'))
         nickname = client.recv(1024).decode('ascii')
-        client.send_message('ROOM'.encode('ascii'))
+        client.send('ROOM'.encode('ascii'))
         room = client.recv(1024).decode('ascii')
 
         print(room)
