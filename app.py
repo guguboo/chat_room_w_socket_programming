@@ -16,6 +16,7 @@ class ChatWindow:
     def __init__(self):
         self.chat_rooms = []
         self.room_name = ""
+        self.room_owner = ""
         self.window = Tk()
         self._setup_main_window()
 
@@ -224,8 +225,8 @@ class ChatWindow:
 
     def show_members(self):
         # Create a new window to display members
-        members_window = Toplevel(self.window)
-        members_window.title("Members in Chat Room")
+        self.members_window = Toplevel(self.window)
+        self.members_window.title("Members in Chat Room")
         width = 350
         height = 500
 
@@ -234,12 +235,12 @@ class ChatWindow:
 
         x = int((screenwidth / 2) - (width / 2))
         y = int((screenheight / 2) - (height / 2))
-        members_window.geometry(f"{width}x{height}+{x}+{y}")
+        self.members_window.geometry(f"{width}x{height}+{x}+{y}")
 
-        Label(members_window, text=f"Members in Room '{self.room_name}':", font=FONT_BOLD).pack(pady=10)
+        Label(self.members_window, text=f"Members in Room '{self.room_name}':", font=FONT_BOLD).pack(pady=10)
 
         # Create a listbox to display members
-        listbox = Listbox(members_window)
+        listbox = Listbox(self.members_window)
         listbox.pack(pady=10)
 
         # Fetch members from database
@@ -247,6 +248,10 @@ class ChatWindow:
         cursor = connection.cursor()
         cursor.execute("SELECT member.username FROM member JOIN chat_room ON member.Room_Id = chat_room.Room_Id WHERE Room_Name = %s", (self.room_name,))
         members = cursor.fetchall()
+
+        cursor.execute( "SELECT username FROM chat_room WHERE Room_Name = %s", (self.room_name,))
+        owner = cursor.fetchone()
+        self.room_owner = owner[0]
         connection.close()
 
         # Insert members into listbox
@@ -256,12 +261,74 @@ class ChatWindow:
         # Function to handle listbox selection
         def on_select(event):
             selected_member = listbox.get(listbox.curselection())
-            # Implement any action upon selecting a member if needed
+            print(selected_member)
+            print(self.username)
+            print(self.room_owner)
+            if self.username == self.room_owner:
+                print("masuk")
+                if selected_member != self.username and selected_member != self.room_owner:
+                    self.prompt_delete_member(selected_member, self.room_name)
+                elif selected_member == self.username:
+                    messagebox.showwarning("Warning", "You cannot delete yourself.")
 
         listbox.bind('<<ListboxSelect>>', on_select)
 
+        Button(self.members_window, text="Leave", command=lambda: self.prompt_leave(self.room_name)).pack(pady=10)
         # Button to close the window
-        Button(members_window, text="Close", command=members_window.destroy).pack(pady=10)
+        Button(self.members_window, text="Close", command=self.members_window.destroy).pack(pady=10)
+
+    def prompt_leave(self, room_name):
+        answer = messagebox.askyesno("Leave Room", f"Are you sure you want to leave room {room_name}?")
+        if answer:
+            self.leave_room(self.username, room_name)
+
+    def leave_room(self, member, room_name):
+        connection = self.connect_to_database()
+        if connection.is_connected():
+            cursor = connection.cursor()
+            query = "SELECT Room_Id FROM chat_room WHERE Room_Name = %s"
+            cursor.execute(query, (room_name,))
+            id = (cursor.fetchone())[0]
+
+            query = "SELECT username FROM chat_room WHERE Room_Name = %s"
+            cursor.execute(query, (room_name,))
+            usn = (cursor.fetchone())[0]
+
+            if usn:
+                query = "DELETE FROM chat_room WHERE username = %s AND Room_Id = %s"
+                cursor.execute(query, (member, id))
+
+                query = "DELETE FROM member WHERE Room_Id = %s"
+                cursor.execute(query, (id,))
+                connection.commit()
+            else:
+                query = "DELETE FROM member WHERE username = %s AND Room_Id = %s"
+                cursor.execute(query, (member, id))
+                connection.commit()
+
+            self.members_window.destroy()
+            self.back_to_main_menu()
+
+            cursor.close()
+            connection.close()
+
+    def prompt_delete_member(self, member, room_name):
+        answer = messagebox.askyesno("Delete Member", f"Are you sure you want to delete {member}?")
+        if answer:
+            self.delete_member(member, room_name)
+
+    def delete_member(self, member, room_name):
+        connection = self.connect_to_database()
+        if connection.is_connected():
+            cursor = connection.cursor()
+            query = "SELECT Room_Id FROM chat_room WHERE Room_Name = %s"
+            cursor.execute(query, (room_name,))
+            id = (cursor.fetchone())[0]
+            query = "DELETE FROM member WHERE username = %s AND Room_Id = %s"
+            cursor.execute(query, (member, id))
+            connection.commit()
+            cursor.close()
+            connection.close()
 
     def update_user_list(self, usernames):
         self.user_list.delete(0, END)
