@@ -28,8 +28,12 @@ class Client:
                     self.client.send(self.username.encode('ascii'))
                 elif message == 'ROOM':
                     self.client.send(self.room.encode('ascii'))
+                elif message == 'SUCCESS':
+                    self.parent.creating_room_handle("success")
+                elif message == 'CREATING_ROOM_ERR':
+                    self.parent.creating_room_handle("err")
                 else:
-                    print(message)
+                    # print(message)
                     self.parent.insert_message(message)
             except ConnectionResetError:
                 print("Connection was closed by the server")
@@ -56,3 +60,6 @@ class Client:
         if message:
             with self.queue_lock:
                 self.message_queue.append(message)
+
+    def close_socket(self):
+        self.client.close()

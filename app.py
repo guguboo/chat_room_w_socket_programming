@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import messagebox
+import re
 from client import Client
 import mysql.connector
 
@@ -273,12 +274,12 @@ class ChatWindow:
     def on_enter_msg(self, event=None):
         msg = self.msg_box.get()
         self.client.send_message(msg)
-        self.insert_message(f"You: {msg}")
         self.msg_box.delete(0, END)  # Clear the message box after sending
         return msg
 
     def back_to_main_menu(self):
         self.back_btn.destroy()
+        self.client.close_socket()
         self.main_menu()
 
     def insert_message(self, msg):
@@ -331,7 +332,7 @@ class ChatWindow:
         def submit():
             room_name = chat_room_name.get()
             desc = description.get()
-            if room_name:
+            if re.match("^[A-Za-z0-9 ]+$", room_name):
                 connection = self.connect_to_database()
 
                 cursor = connection.cursor()
@@ -341,23 +342,27 @@ class ChatWindow:
                 )
                 connection.commit()
                 connection.close()
-
-                self.chat_rooms.append(room_name)
-                messagebox.showinfo("Success", f"Chat room '{room_name}' created successfully!")
+                
                 create_window.destroy()
-                self.client = Client(self.username, self, room_name)
+                self.client = Client(self.username, self, "creatingchatroom_" + room_name)
                 self.room_name = room_name
-                self._chat_window()
             else:
-                messagebox.showwarning("Input Error", "Chat room name is required!")
+                messagebox.showwarning("Input Error", "Chat room name invalid!")
 
         Button(create_window, text="Create", command=submit).pack(pady=20)
         Button(create_window, text="Cancel", command=create_window.destroy).pack(pady=10)
-        
+    
+    def creating_room_handle(self, msg):
+        print(msg)
+        if msg == "err":
+            messagebox.showwarning("Room Error", "Chat Room Dengan Nama Tersebut Sudah Ada!")
+        else:
+            self._chat_window()
     def see_chat_rooms(self):
     # Create a new window to display available chat rooms
         rooms_window = Toplevel(self.window)
         rooms_window.title("Available Chat Rooms")
+        self.room_window = rooms_window
         lebar = 350
         tinggi = 500
 
@@ -371,6 +376,7 @@ class ChatWindow:
         Label(rooms_window, text="Available Chat Rooms:").pack(pady=10)
         listbox = Listbox(rooms_window)
         listbox.pack(pady=10)
+        listbox.bind('<<ListboxSelect>>', self.on_listbox_select)
 
         connection = self.connect_to_database()
         cursor = connection.cursor()
@@ -392,6 +398,19 @@ class ChatWindow:
 
         listbox.bind('<<ListboxSelect>>', open_chat)
         Button(rooms_window, text="Back", command=rooms_window.destroy).pack(pady=10)
+
+    def on_listbox_select(self, event):
+        #append ke DB juga
+
+        selection = event.widget.curselection()
+        if selection:
+            index = selection[0]
+            selected_room = event.widget.get(index)
+            print(f"Selected room: {selected_room}")
+            self.client = Client(self.username, self, selected_room)
+            self.room_name = selected_room
+            self._chat_window()
+            self.room_window.destroy()
 
     def main_menu(self):
         self.clear_all()
