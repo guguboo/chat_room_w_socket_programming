@@ -214,9 +214,53 @@ class ChatWindow:
                             command=lambda: self.on_enter_msg())
         self.back_btn = Button(self.window, text="Back", font=FONT_BOLD, bg=BG_GRAY,
                             command=lambda: self.back_to_main_menu())
+        members_button = Button(self.changeableWindow, text="Members", command=self.show_members, font=FONT_BOLD,
+                                width=20, bg=BG_GRAY)
 
         self.back_btn.place(relx=0.02, rely=0.008)
+        members_button.place(relx=0.77, rely=0.008, relheight=0.06, relwidth=0.22)
         send_button.place(relx=0.77, rely=0.008, relheight=0.06, relwidth=0.22)
+
+    def show_members(self):
+        # Create a new window to display members
+        members_window = Toplevel(self.window)
+        members_window.title("Members in Chat Room")
+        width = 350
+        height = 500
+
+        screenwidth = self.window.winfo_screenwidth()
+        screenheight = self.window.winfo_screenheight()
+
+        x = int((screenwidth / 2) - (width / 2))
+        y = int((screenheight / 2) - (height / 2))
+        members_window.geometry(f"{width}x{height}+{x}+{y}")
+
+        Label(members_window, text=f"Members in Room '{self.room_name}':", font=FONT_BOLD).pack(pady=10)
+
+        # Create a listbox to display members
+        listbox = Listbox(members_window)
+        listbox.pack(pady=10)
+
+        # Fetch members from database
+        connection = self.connect_to_database()
+        cursor = connection.cursor()
+        cursor.execute("SELECT chat_room.username FROM member JOIN chat_room ON member.Room_Id = chat_room.Room_Id WHERE Room_Name = %s", (self.room_name,))
+        members = cursor.fetchall()
+        connection.close()
+
+        # Insert members into listbox
+        for member in members:
+            listbox.insert(END, member[0])
+
+        # Function to handle listbox selection
+        def on_select(event):
+            selected_member = listbox.get(listbox.curselection())
+            # Implement any action upon selecting a member if needed
+
+        listbox.bind('<<ListboxSelect>>', on_select)
+
+        # Button to close the window
+        Button(members_window, text="Close", command=members_window.destroy).pack(pady=10)
 
     def update_user_list(self, usernames):
         self.user_list.delete(0, END)
