@@ -3,14 +3,14 @@ import threading
 
 serverPort = 50112
 
-
 class Client:
-    def __init__(self, username, parent):
+    def __init__(self, username, parent, room_name):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.connect(('localhost', serverPort))
         self.username = username
-        self.queue_lock = threading.Lock()
         self.parent = parent
+        self.room = room_name
+        self.queue_lock = threading.Lock()
         self.receive_thread = threading.Thread(target=self.receive)
         self.receive_thread.start()
 
@@ -22,20 +22,15 @@ class Client:
 
     def receive(self):
         while True:
-            # try:
-                # Receive Message From Server
-                # If 'NICK' Send Nickname
                 message = self.client.recv(1024).decode('ascii')
                 if message == 'NICK':
                     self.client.send(self.username.encode('ascii'))
+                elif message == 'ROOM':
+                    self.client.send(self.room.encode('ascii'))
                 else:
                     print(message)
                     self.parent.insert_message(message)
-            # except:
-            #     # Close Connection When Error
-            #     print("An error occured!")
-            #     self.client.close()
-            #     break
+
 
     def write(self):
         while True:

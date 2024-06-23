@@ -49,7 +49,6 @@ INSERT INTO `chat_log` (`id`, `Room_Id`, `TimeStamp`, `Log_Id`) VALUES
 
 CREATE TABLE `chat_room` (
   `id` int(11) NOT NULL,
-  `Room_Id` int(11) NOT NULL,
   `Room_Name` varchar(50) NOT NULL,
   `Created_At` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -97,8 +96,7 @@ ALTER TABLE `chat_log`
 -- Indexes for table `chat_room`
 --
 ALTER TABLE `chat_room`
-  ADD PRIMARY KEY (`Room_Id`),
-  ADD KEY `id` (`id`);
+  ADD PRIMARY KEY `id` (`id`);
 
 --
 -- Indexes for table `users`

@@ -1,6 +1,7 @@
 import threading
 import socket
-import object_client
+from collections import defaultdict
+from object_client import ClientObj
 
 host = 'localhost'
 port = 50112
@@ -10,29 +11,29 @@ server.bind((host, port))
 
 server.listen()
 
-clients = []
-nicknames = []
+room_members = {}
 
 
-def broadcast(msg):
-    for client in clients:
-        client.send(msg)
+def broadcast(msg, room):
+    print(room_members)
+    for member in room_members[room]:
+        member.client.send(msg)
 
 
-def handle(client):
+def handle(new_client):
+    client = new_client.client
     while True:
         try:
             message = client.recv(1024)
-            broadcast(message)
+            print(message)
+            broadcast(message, new_client.room)
         except:
-            index = clients.index(client)
-            clients.remove(client)
-            client.close()
-            nickname = nicknames[index]
-            broadcast(f"{nickname} meninggalkan chat".encode('ascii'))
-            nicknames.remove(nickname)
-            pass
-
+            curr_room = room_members[new_client.room]
+            for member in curr_room:
+                if(new_client.username == member.username):
+                    client.close()
+                    curr_room.remove(member)
+                    broadcast(f"{new_client.username} meninggalkan chat".encode('ascii'), new_client.room)
 
 def receive():
     while True:
@@ -41,14 +42,23 @@ def receive():
 
         client.send('NICK'.encode('ascii'))
         nickname = client.recv(1024).decode('ascii')
-        nicknames.append(nickname)
-        clients.append(client)
+        client.send('ROOM'.encode('ascii'))
+        room = client.recv(1024).decode('ascii')
+
+        print(room)
+        new_client = ClientObj(nickname, client, room)
+        if room not in room_members:
+            print("baru bikin room")
+            room_members[room] = [new_client]
+        else:
+            print("sudah ada room, nambah user")
+            print(room_members[room])   
+            room_members[room].append(new_client)
 
         print("Nickname is {}".format(nickname))
-        broadcast("{} joined!".format(nickname).encode('ascii'))
-        # client.send('Connected to server!'.encode('ascii'))
+        broadcast("{} joined!".format(nickname).encode('ascii'), room)
 
-        thread = threading.Thread(target=handle, args=(client,))
+        thread = threading.Thread(target=handle, args=(new_client,))
         thread.start()
 
 

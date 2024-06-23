@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import messagebox
 from client import Client
 import mysql.connector
 
@@ -12,6 +13,8 @@ FONT_BOLD = "Helvetica 13 bold"
 
 class ChatWindow:
     def __init__(self):
+        self.chat_rooms = []
+        self.room_name = ""
         self.window = Tk()
         self._setup_main_window()
 
@@ -55,28 +58,28 @@ class ChatWindow:
         self.clear_all()
 
         # Username
-        user_label = Label(self.changeableWindow, text="Username", font=FONT_BOLD, anchor='w', bg=BG_COLOR)
+        user_label = Label(self.changeableWindow, text="Username", font=FONT_BOLD, anchor='w', bg=BG_COLOR, fg=TEXT_COLOR)
         user_label.place(relx=0.02, relwidth=0.4)
         self.user_box = Entry(self.changeableWindow, bg="#2C3E50", fg=TEXT_COLOR, font=FONT)
         self.user_box.place(relx=0.02, rely=0.05, relheight=0.06, relwidth=0.3)
         self.user_box.bind("<Return>", self.on_enter_username)
 
         # Password
-        pass_label = Label(self.changeableWindow, text="Password", font=FONT_BOLD, anchor='w', bg=BG_COLOR)
-        pass_label.place(relx=0.02, rely=0.13, relwidth=0.4)
+        pass_label = Label(self.changeableWindow, text="Password", font=FONT_BOLD, anchor='w', bg=BG_COLOR, fg=TEXT_COLOR)
+        pass_label.place(relx=0.02, rely=0.15, relwidth=0.4)
         self.pass_box = Entry(self.changeableWindow, bg="#2C3E50", fg=TEXT_COLOR, font=FONT, show = "*")
-        self.pass_box.place(relx=0.02, rely=0.18, relheight=0.06, relwidth=0.3)
+        self.pass_box.place(relx=0.02, rely=0.2, relheight=0.06, relwidth=0.3)
         self.pass_box.bind("<Return>", self.on_enter_username)
 
         # OK
         send_button = Button(self.changeableWindow, text="OK", font=FONT_BOLD, width=20, bg=BG_GRAY,
-                             command=lambda: self.on_enter_username(None))
-        send_button.place(relx=0.34, rely=0.27, relheight=0.06, relwidth=0.1)
+                            command=lambda: self.on_enter_username(None))
+        send_button.place(relx=0.34, rely=0.3, relheight=0.06, relwidth=0.1)
 
         # Register
         register_button = Button(self.changeableWindow, text="Register", font=FONT_BOLD, width=20, bg=BG_GRAY,
-                                 command=self._register_window)
-        register_button.place(relx=0.45, rely=0.27, relheight=0.06, relwidth=0.15)
+                                command=self._register_window)
+        register_button.place(relx=0.45, rely=0.3, relheight=0.06, relwidth=0.15)
 
         self.user_box.focus()
 
@@ -86,12 +89,13 @@ class ChatWindow:
         authenticated = self._authenticate_user()
 
         err_label = Label(self.changeableWindow, font=FONT, fg="red", bg=BG_COLOR, anchor='w')
-        err_label.place(relx=0.02, rely=0.1, relwidth=0.5)
+        err_label.place(relx=0.02, rely=0.1, relwidth=0.7)
         if not authenticated:
             err_label.config(text="Username atau Password Salah")
         else:
-            self.client = Client(self.username, self)
-            self._chat_window()
+            self.main_menu()
+            # self.client = Client(self.username, self)
+            # self._chat_window()
 
     def _authenticate_user(self):
         if not self.username or not self.password:
@@ -109,25 +113,22 @@ class ChatWindow:
                 cursor.close()
                 connection.close()
 
-                if user:
-                    return True
-                else:
-                    return False
-
+                return user is not None
+            
     def _register_window(self):
         self.clear_all()
 
         self.head_label.config(text="Register New User")
 
         # Username
-        user_label = Label(self.changeableWindow, text="Username", font=FONT_BOLD, anchor='w', bg=BG_COLOR)
+        user_label = Label(self.changeableWindow, text="Username", font=FONT_BOLD, anchor='w', bg=BG_COLOR, fg=TEXT_COLOR)
         user_label.place(relx=0.02, relwidth=0.4, rely=0.02)
         self.reg_user_box = Entry(self.changeableWindow, bg="#2C3E50", fg=TEXT_COLOR, font=FONT)
         self.reg_user_box.place(relx=0.02, rely=0.07, relheight=0.06, relwidth=0.3)
         self.reg_user_box.bind("<Return>", self.on_register_user)
 
         # Password
-        pass_label = Label(self.changeableWindow, text="Password", font=FONT_BOLD, anchor='w', bg=BG_COLOR)
+        pass_label = Label(self.changeableWindow, text="Password", font=FONT_BOLD, anchor='w', bg=BG_COLOR, fg=TEXT_COLOR)
         pass_label.place(relx=0.02, relwidth=0.4, rely=0.15)
         self.reg_pass_box = Entry(self.changeableWindow, bg="#2C3E50", fg=TEXT_COLOR, font=FONT, show="*")
         self.reg_pass_box.place(relx=0.02, rely=0.2, relheight=0.06, relwidth=0.3)
@@ -135,7 +136,7 @@ class ChatWindow:
 
         # Register
         register_button = Button(self.changeableWindow, text="Register", font=FONT_BOLD, width=20, bg=BG_GRAY,
-                                 command=lambda: self.on_register_user(None))
+                                command=lambda: self.on_register_user(None))
         register_button.place(relx=0.34, rely=0.3, relheight=0.06, relwidth=0.15)
         self.reg_user_box.focus()
 
@@ -182,10 +183,11 @@ class ChatWindow:
 
     def _chat_window(self):
         #text widget
-        self.head_label.config(text="Chat Room V1 - Vico, Andrea, Nirvana")
-        self.text_widget = Text(self.window, width=20, height=2, bg=BG_COLOR, fg=TEXT_COLOR,
-                                font=FONT, pady=5, padx=5)
-        self.text_widget.place(relheight=0.745, relwidth=1, rely=0.08)
+        self.clear_all()
+        self.head_label.config(text=self.room_name)
+        self.text_widget = Text(self.changeableWindow, width=20, height=2, bg=BG_COLOR, fg=TEXT_COLOR,
+                                font=FONT, padx=5)
+        self.text_widget.place(relheight=0.745, relwidth=1, rely=0)
         self.text_widget.configure(cursor="arrow", state=DISABLED)
 
         # scroll bar
@@ -194,8 +196,8 @@ class ChatWindow:
         scrollbar.configure(command=self.text_widget.yview)
 
         #btm label
-        bottom_label = Label(self.window, bg=BG_GRAY, height=80)
-        bottom_label.place(relwidth=1, rely=0.825)
+        bottom_label = Label(self.changeableWindow, bg=BG_GRAY, height=80)
+        bottom_label.place(relwidth=1, rely=0.745)
 
         #buat ketik
         self.msg_box = Entry(bottom_label, bg="#2C3E50", fg=TEXT_COLOR, font=FONT)
@@ -205,13 +207,19 @@ class ChatWindow:
 
         #send btn
         send_button = Button(bottom_label, text="Send", font=FONT_BOLD, width=20, bg=BG_GRAY,
-                             command=lambda: self.on_enter_msg(None))
+                            command=lambda: self.on_enter_msg())
+        self.back_btn = Button(self.window, text="Back", font=FONT_BOLD, bg=BG_GRAY,
+                            command=lambda: self.back_to_main_menu())
+        self.back_btn.place(relx=0.02, rely=0.008)
         send_button.place(relx=0.77, rely=0.008, relheight=0.06, relwidth=0.22)
 
-    def on_enter_msg(self, event):
+    def on_enter_msg(self):
         msg = self.msg_box.get()
         self.client.send_message(msg)
         return msg
+    def back_to_main_menu(self):
+        self.back_btn.destroy()
+        self.main_menu()
 
     def insert_message(self, msg):
         if not msg:
@@ -237,6 +245,74 @@ class ChatWindow:
         for widget in self.changeableWindow.winfo_children():
             widget.destroy()
 
+    
+    #main menu  
+    def create_chat_room(self):
+        create_window = Toplevel(self.window)
+        create_window.title("Create Chat Room")
+        lebar = 350
+        tinggi = 500
 
+        screenwidth = self.window.winfo_screenwidth()
+        screenheight = self.window.winfo_screenheight()
+
+        x = int((screenwidth / 2) - (lebar / 2))
+        y = int((screenheight / 2) - (tinggi / 2))
+        create_window.geometry(f"{lebar}x{tinggi}+{x}+{y}")
+
+        Label(create_window, text="Chat Room Name:").pack(pady=10)
+        chat_room_name = Entry(create_window)
+        chat_room_name.pack(pady=10)
+
+        Label(create_window, text="Description:").pack(pady=10)
+        description = Entry(create_window)
+        description.pack(pady=10)
+
+        def submit():
+            room_name = chat_room_name.get()
+            desc = description.get()
+            if room_name:
+                self.chat_rooms.append(room_name)  # Add the new room name to the list
+                messagebox.showinfo("Success", f"Chat room '{room_name}' created successfully!")
+                create_window.destroy()
+                self.client = Client(self.username, self, room_name)
+                self.room_name = room_name
+                self._chat_window()
+            else:
+                messagebox.showwarning("Input Error", "Chat room name is required!")
+
+        Button(create_window, text="Create", command=submit).pack(pady=20)
+        Button(create_window, text="Cancel", command=create_window.destroy).pack(pady=10)
+        
+    def see_chat_rooms(self):
+    # Create a new window to display available chat rooms
+        rooms_window = Toplevel(self.window)
+        rooms_window.title("Available Chat Rooms")
+        lebar = 350
+        tinggi = 500
+
+        screenwidth = self.window.winfo_screenwidth()
+        screenheight = self.window.winfo_screenheight()
+
+        x = int((screenwidth / 2) - (lebar / 2))
+        y = int((screenheight / 2) - (tinggi / 2))
+        rooms_window.geometry(f"{lebar}x{tinggi}+{x}+{y}")
+
+        Label(rooms_window, text="Available Chat Rooms:").pack(pady=10)
+        listbox = Listbox(rooms_window)
+        listbox.pack(pady=10)
+
+        for room in self.chat_rooms:
+            listbox.insert(END, room)
+
+        Button(rooms_window, text="Back", command=rooms_window.destroy).pack(pady=10)
+
+    def main_menu(self):
+        self.clear_all()
+        self.head_label.config(text="Main Menu")
+        create_room = Button(self.changeableWindow, text="Create Chat Room", command=self.create_chat_room, font=FONT_BOLD, width=20, bg=BG_GRAY)
+        create_room.pack(pady=10)
+        see_list = Button(self.changeableWindow, text="See All Chat Rooms", command=self.see_chat_rooms, font=FONT_BOLD, width=20, bg=BG_GRAY)
+        see_list.pack(pady=10)
 app = ChatWindow()
 app.run()
