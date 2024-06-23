@@ -1,3 +1,4 @@
+import sys
 from tkinter import *
 from tkinter import messagebox
 import re
@@ -510,12 +511,84 @@ class ChatWindow:
 
     def main_menu(self):
         self.clear_all()
-        self.head_label.config(text="Main Menu")
+        self.head_label.config(text="Main Menu - Chatroom Vico, Andrea, Nirvana")
         create_room = Button(self.changeableWindow, text="Create Chat Room", command=self.create_chat_room, font=FONT_BOLD, width=20, bg=BG_GRAY)
         create_room.pack(pady=10)
         see_list = Button(self.changeableWindow, text="See All Chat Rooms", command=self.see_chat_rooms, font=FONT_BOLD, width=20, bg=BG_GRAY)
         see_list.pack(pady=10)
+        join_room = Button(self.changeableWindow, text="Join Chat Room", command=self.join_chat_room, font=FONT_BOLD,
+                        width=20, bg=BG_GRAY)
+        join_room.pack(pady=10)
 
+    def _join_chat_room_by_id(self, room_id):
+        try:
+            connection = self.connect_to_database()
+            cursor = connection.cursor()
 
+            # Check if the room exists
+            cursor.execute("SELECT * FROM chat_room WHERE Room_Id = %s", (room_id,))
+            room = cursor.fetchone()
+            if room:
+                # Check if the user is already in the room
+                cursor.execute(
+                    "SELECT * FROM member WHERE username = %s AND Room_Id = %s",
+                    (self.username, room_id)
+                )
+                user_in_room = cursor.fetchone()
+                if not user_in_room:
+                    # Add user to chat room
+                    cursor.execute(
+                        "INSERT INTO member (username, Room_Id) VALUES (%s, %s)",
+                        (self.username, room_id)
+                    )
+                    connection.commit()
+
+                # Fetch room name for display purposes
+                cursor.execute("SELECT Room_Name FROM chat_room WHERE Room_Id = %s", (room_id,))
+                room_name = cursor.fetchone()[0]
+
+                # Open the chat window using open_chat function
+                self.client = Client(self.username, self, room_name)
+                self.room_name = room_name
+                self._chat_window()
+                self.join_window.destroy()
+            else:
+                messagebox.showwarning("Input Error", "Room ID does not exist!")
+        except Exception as e:
+            messagebox.showerror("Database Error", str(e))
+        finally:
+            cursor.close()
+            connection.close()
+
+    def join_chat_room(self):
+        join_window = Toplevel(self.window)
+        self.join_window = join_window
+        join_window.title("Join Chat Room by ID")
+        width = 350
+        height = 200
+
+        screenwidth = self.window.winfo_screenwidth()
+        screenheight = self.window.winfo_screenheight()
+
+        x = int((screenwidth / 2) - (width / 2))
+        y = int((screenheight / 2) - (height / 2))
+        join_window.geometry(f"{width}x{height}+{x}+{y}")
+
+        Label(join_window, text="Enter Room ID:").pack(pady=10)
+        room_id_entry = Entry(join_window)
+        room_id_entry.pack(pady=10)
+
+        def submit():
+            room_id = room_id_entry.get()
+            if room_id:
+                self._join_chat_room_by_id(room_id)
+                join_window.destroy()
+            else:
+                messagebox.showwarning("Input Error", "Room ID is required!")
+
+        Button(join_window, text="Join", command=submit).pack(pady=20)
+        Button(join_window, text="Cancel", command=join_window.destroy).pack(pady=10)
+        
 app = ChatWindow()
 app.run()
+sys.exit()  

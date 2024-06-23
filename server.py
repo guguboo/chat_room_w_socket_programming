@@ -13,7 +13,6 @@ server.bind((host, port))
 server.listen()
 
 room_members = {}
-chat_rooms = {}
 
 def connect_to_database():
     try:
@@ -33,7 +32,7 @@ cursor = conn.cursor()
 cursor.execute("SELECT Room_Name FROM chat_room")
 room_names = cursor.fetchall()
 for name in room_names:
-    chat_rooms[name[0]] = []
+    room_members[name[0]] = []
 conn.close()
 
 def broadcast(msg, room):
@@ -67,7 +66,7 @@ def receive():
         client.send('ROOM'.encode('ascii'))
         room = client.recv(1024).decode('ascii')
 
-        print(room)
+        # print(room)
         new_client = ClientObj(nickname, client, room)
         if room not in room_members:
             print("baru bikin room")
@@ -85,4 +84,5 @@ def receive():
 
 
 print("Server is running")
+print(room_members)
 receive()
