@@ -17,6 +17,7 @@ class ChatWindow:
     def __init__(self):
         self.chat_rooms = []
         self.room_name = ""
+        self.room_id = ""
         self.room_owner = ""
         self.window = Tk()
         self._setup_main_window()
@@ -225,6 +226,8 @@ class ChatWindow:
         send_button.place(relx=0.77, rely=0.008, relheight=0.06, relwidth=0.22)
 
     def show_members(self):
+        connection = self.connect_to_database()
+        cursor = connection.cursor()
         # Create a new window to display members
         self.members_window = Toplevel(self.window)
         self.members_window.title("Members in Chat Room")
@@ -240,14 +243,16 @@ class ChatWindow:
 
         Label(self.members_window, text=f"Members in Room '{self.room_name}':", font=FONT_BOLD).pack(pady=10)
 
+        cursor.execute("SELECT Room_Id FROM chat_room WHERE Room_Name = %s", (self.room_name,))
+        self.room_id = cursor.fetchone()[0]
+        Label(self.members_window, text=f"Room Id: '{self.room_id}':", font=FONT_BOLD).pack(pady=10)
+
         # Create a listbox to display members
         listbox = Listbox(self.members_window)
         listbox.pack(pady=10)
 
         # Fetch members from database
-        connection = self.connect_to_database()
-        cursor = connection.cursor()
-        cursor.execute("SELECT member.username FROM member JOIN chat_room ON member.Room_Id = chat_room.Room_Id WHERE Room_Name = %s", (self.room_name,))
+        cursor.execute("SELECT member.username FROM member WHERE Room_Id = %s", (self.room_id,))
         members = cursor.fetchall()
 
         cursor.execute( "SELECT username FROM chat_room WHERE Room_Name = %s", (self.room_name,))
