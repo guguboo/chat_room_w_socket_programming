@@ -330,6 +330,7 @@ class ChatWindow:
             connection.commit()
             cursor.close()
             connection.close()
+            self.show_members()
 
     def update_user_list(self, usernames):
         self.user_list.delete(0, END)
