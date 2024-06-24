@@ -1,0 +1,8 @@
+Cara menggunakan APP chatroom:
+1. download XAMPP v3.3.0
+2. start apache dan mysql
+3. set python interpreter untuk project ini
+4. install dependencies: mysql-connector-python
+5. buka server.py
+6. pastikan host dan port sudah sesuai, lalu run
+7. buat terminal baru, pastikan host dan port sudah sesuai dengan server, lalu jalankan
